@@ -1,0 +1,1 @@
+yes y | docker system prune && docker compose up

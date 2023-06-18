@@ -1,0 +1,107 @@
+---
+version: '3'
+services:
+  zookeeper-1:
+    image: confluentinc/cp-zookeeper:7.1.0
+    container_name: zookeeper-1
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+      ZOOKEEPER_INIT_LIMIT: 5
+      ZOOKEEPER_SYNC_LIMIT: 2
+    ports:
+      - 22181:2181
+
+  kafka-1:
+    image: confluentinc/cp-kafka:7.1.0
+    container_name: kafka-1
+    depends_on:
+      - zookeeper-1
+
+    ports:
+      - 29092:29092
+      - 9991:9991
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper-1:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-1:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: kafka-1:9092
+      CONFLUENT_METRICS_REPORTER_ZOOKEEPER_CONNECT: zookeeper-1:2181
+      CONFLUENT_METRICS_REPORTER_TOPIC_REPLICAS: 1
+      CONFLUENT_METRICS_ENABLE: 'false'
+      KAFKA_HEAP_OPTS: "-XX:MaxRAMPercentage=70.0"
+    mem_limit: 512m
+  kafka-2:
+    image: confluentinc/cp-kafka:7.1.0
+    container_name: kafka-2
+    depends_on:
+      - zookeeper-1
+    ports:
+      - 39092:39092
+      - 9992:9992
+    environment:
+      KAFKA_BROKER_ID: 2
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper-1:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-2:9092,PLAINTEXT_HOST://localhost:39092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: kafka-2:9092
+      CONFLUENT_METRICS_REPORTER_ZOOKEEPER_CONNECT: zookeeper-1:2181
+      CONFLUENT_METRICS_REPORTER_TOPIC_REPLICAS: 1
+      CONFLUENT_METRICS_ENABLE: 'false'
+      KAFKA_HEAP_OPTS: "-XX:MaxRAMPercentage=70.0"
+    mem_limit: 512m
+
+  kafka-3:
+      image: confluentinc/cp-kafka:7.1.0
+      container_name: kafka-3
+      depends_on:
+        - zookeeper-1
+      ports:
+        - 49092:49092
+        - 9993:9993
+      environment:
+        KAFKA_BROKER_ID: 3
+        KAFKA_ZOOKEEPER_CONNECT: zookeeper-1:2181
+        KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-3:9092,PLAINTEXT_HOST://localhost:49092
+        KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+        KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+        KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+        CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: kafka-3:9092
+        CONFLUENT_METRICS_REPORTER_ZOOKEEPER_CONNECT: zookeeper-1:2181
+        CONFLUENT_METRICS_REPORTER_TOPIC_REPLICAS: 1
+        CONFLUENT_METRICS_ENABLE: 'false'
+        KAFKA_HEAP_OPTS: "-XX:MaxRAMPercentage=70.0"
+      mem_limit: 512m
+
+  kafka-init:
+      image: confluentinc/cp-kafka:latest
+      container_name: kafka-init
+      depends_on:
+        - kafka-1
+        - kafka-2
+        - kafka-3
+      entrypoint: ['/bin/sh', '-c']
+      command: |
+        "
+        kafka-topics --bootstrap-server kafka-1:9092 --create --if-not-exists --topic history-topic --partitions 5;
+        "
+
+  generator:
+    build: ./generator
+    depends_on:
+      kafka-init:
+        condition: service_completed_successfully
+    command: ["python", "./src/generator.py", "./src/history.csv"]
+
+  consumer-stats:
+    build: ./consumer
+    container_name: consumer
+    depends_on:
+      kafka-init:
+        condition: service_completed_successfully
+    command: [ "python", "./src/consumer.py" ]
