@@ -10,11 +10,14 @@ Implement a “generator” microservice that splits the dataset to messages, se
 
 Implement a kafka streaming application that calculates a visiting statistic - a number of visits for each root domain (com, ua, org, edu, etc) from your browser history and prints top five root domains
 
-Results: 
-Top 5: 
- | suffix	| count
-0	| com	| 24568
-1	| com.ua	| 6805
-2	| ua	| 3064
-3	| in.ua	| 858
-4	| org	| 572
+Run: `docker compose up`
+
+Results, Top 5: 
+
+| | suffix	| count
+| --- | --- | --- |
+| 0	| com	| 24568 |
+| 1	| com.ua	| 6805 |
+| 2	| ua	| 3064 |
+| 3	| in.ua	| 858 |
+| 4	| org	| 572 |
