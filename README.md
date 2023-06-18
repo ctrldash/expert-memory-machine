@@ -1,1 +1,11 @@
-# expert-memory-machine
+### Repo with homework for data streams topics
+
+A simple kafka streaming application
+
+Dataset: a history from your favorite browser to a CSV file
+
+Prepare a kafka environment.
+
+Implement a “generator” microservice that splits the dataset to messages, sends them to kafka as a message. 
+
+Implement a kafka streaming application that calculates a visiting statistic - a number of visits for each root domain (com, ua, org, edu, etc) from your browser history and prints top five root domains
